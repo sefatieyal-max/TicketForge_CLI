@@ -1,0 +1,5 @@
+﻿requests>=2.32
+keyring>=25.0
+colorama>=0.4
+pytest>=8.0
+responses>=0.25

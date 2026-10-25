@@ -1,0 +1,10 @@
+﻿Ref:         TF-580
+Title:       From CLI
+Stage:       closed
+Owner:       eyal
+Depends on:  TF-578
+Fields:      -
+Created:     2026-10-25 11:16
+Updated:     2026-10-25 11:32
+
+created with args
