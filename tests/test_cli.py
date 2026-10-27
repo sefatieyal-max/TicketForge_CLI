@@ -19,6 +19,7 @@ class FakeClient:
         self.username = "eyal"
         self.rate_remaining = None
         self.rate_limit = None
+        self.created = []
 
     def get_ticket(self, ref):
         if self.ticket is None:
@@ -28,6 +29,10 @@ class FakeClient:
     def update_ticket(self, ref, **fields):
         self.updates.append(fields)
         return {"ref": ref}
+
+    def create_ticket(self, title, description=None, depends_on=None):
+        self.created.append((title, description, depends_on))
+        return {"ref": "TF-1", "title": title}
 
 
 def test_update_keeps_fields_that_were_not_changed():
@@ -180,3 +185,23 @@ def test_menu_logout_choice_exits_the_menu():
     with patch("builtins.input", side_effect=[cli.LOGOUT_CHOICE]), \
             patch("cli.config.delete_password", return_value=True):
         cli.TicketForgeCLI(client).run_menu()       # returns instead of waiting for more input
+
+def test_create_keeps_given_fields_and_asks_only_for_title():
+    client = FakeClient()
+    with patch("builtins.input", side_effect=["My title"]):
+        cli.TicketForgeCLI(client).create_ticket(description="Details", depends_on=["TF-2"])
+    assert client.created == [("My title", "Details", ["TF-2"])]
+
+
+def test_create_with_title_asks_for_missing_fields():
+    client = FakeClient()
+    with patch("builtins.input", side_effect=["", ""]):        # Enter on description and depends-on
+        cli.TicketForgeCLI(client).create_ticket(title="T")
+    assert client.created == [("T", None, None)]
+
+
+def test_create_cancelled_on_empty_title_sends_nothing():
+    client = FakeClient()
+    with patch("builtins.input", side_effect=[""]):
+        cli.TicketForgeCLI(client).create_ticket()
+    assert client.created == []

@@ -111,24 +111,19 @@ class TicketForgeCLI:
         display.print_ticket_details(ticket, self._field_labels(ticket))
 
     def create_ticket(self, title=None, description=None, depends_on=None):
-        """Create a ticket. If no title was given, ask for everything."""
+        """Create a ticket. Asks only for the fields that were not given."""
         if title is None:
-            title, description, depends_on = self._ask_new_ticket()
+            title = ask_valid("Title (Enter to cancel): ", validators.parse_title, "Fix login bug")
             if title is None:
                 print("Cancelled. Nothing was created.")
                 return
+        if description is None:
+            description = ask("Description (optional): ")
+        if depends_on is None:
+            depends_on = ask_valid("Depends on (comma-separated refs, optional): ",
+                                   validators.parse_ref_list, "TF-1, TF-2")
         ticket = self.client.create_ticket(title, description, depends_on)
         display.print_success(f"Created {ticket.get('ref')}: {ticket.get('title')}")
-
-    def _ask_new_ticket(self):
-        """Ask for the new ticket's fields. Returns (None, None, None) if canceled."""
-        title = ask_valid("Title (Enter to cancel): ", validators.parse_title, "hello word")
-        if title is None:
-            return None, None, None
-        description = ask("Description (optional): ")
-        depends_on = ask_valid("Depends on (comma-separated refs, optional): ",
-                               validators.parse_ref_list, "TF-1, TF-2")
-        return title, description, depends_on
 
     def update_ticket(self, ref, changes=None):
         """Change a ticket. The API replaces the whole ticket (PUT), so: fetch it
