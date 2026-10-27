@@ -1,6 +1,18 @@
 from unittest.mock import patch
-
+import pytest
 import prompts
+
+@pytest.mark.parametrize("answers, expected", [
+    ([""], True),
+    (["q"], False),
+    (["Q"], False),
+    (["x", "y", ""], True),      # unknown keys are asked again, then Enter
+    (["more", "q"], False),
+])
+
+def test_ask_more(answers, expected):
+    with patch("builtins.input", side_effect=answers):
+        assert prompts.ask_more() is expected
 
 
 def test_password_keeps_surrounding_spaces():

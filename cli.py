@@ -9,11 +9,8 @@ import display
 import validators
 from client import DEFAULT_BASE_URL, DEFAULT_PAGE_SIZE, TicketForgeClient
 from exceptions import AuthError, NotFoundError, RateLimitError, TicketForgeError
-from prompts import ask, ask_password, ask_valid, confirm
+from prompts import ask, ask_password, ask_valid, confirm, ask_more
 
-
-
-LOAD_MORE_KEY = ""
 CLEAR_VALUE = "-"
 STAGE_EXAMPLE = ", ".join(validators.STAGES)
 REF_EXAMPLE = "TF-12 or just 12"
@@ -124,7 +121,7 @@ class TicketForgeCLI:
             if cursor is None:
                 print(f"\n{shown} ticket(s).")
                 break
-            if not show_all and not self._wants_more():
+            if not show_all and not ask_more():
                 print(f"\nShowed {shown} ticket(s). More are available (use --all to list everything).")
                 break
         display.print_info(display.format_rate_limit(self.client.rate_remaining, self.client.rate_limit))
@@ -290,7 +287,3 @@ class TicketForgeCLI:
         for ticket in tickets:
             print(display.format_ticket_row(ticket))
 
-    @staticmethod
-    def _wants_more():
-        answer = input("-- Enter for more, q to stop: ").strip().lower()
-        return answer == LOAD_MORE_KEY

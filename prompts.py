@@ -10,7 +10,8 @@ import display
 
 YES_ANSWERS = {"y", "yes"}
 NO_ANSWERS = {"n", "no"}
-
+MORE_KEY = ""          # Enter
+STOP_KEY = "q"
 
 def ask(prompt):
     """Trimmed input. Empty input returns None."""
@@ -43,3 +44,13 @@ def confirm(question):
 def ask_password(prompt="Password: "):
     """Hidden input. Empty input returns None."""
     return getpass(prompt) or None
+
+def ask_more():
+    """'Enter for more, q to stop'. Re-asks on anything else."""
+    while True:
+        answer = input("-- Enter for more, q to stop: ").strip().lower()
+        if answer == MORE_KEY:
+            return True
+        if answer == STOP_KEY:
+            return False
+        display.print_error("Press Enter for more, or q to stop.")
