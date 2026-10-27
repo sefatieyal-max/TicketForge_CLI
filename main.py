@@ -75,8 +75,10 @@ def run_command(args):
     """Dispatch one command. Returns an exit code."""
     if args.command == "setup":
         return EXIT_SUCCESS if cli.run_setup() is not None else EXIT_FAILURE
-
-    app = cli.TicketForgeCLI(cli.build_client())
+    client = cli.build_client()
+    if not client:
+        return EXIT_FAILURE
+    app = cli.TicketForgeCLI(client)
     match args.command:
         case "list":
             app.list_tickets(args.limit, show_all=args.all)

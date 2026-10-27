@@ -221,3 +221,9 @@ def test_setup_warns_when_env_password_differs(setup_env, monkeypatch, capsys):
     with patch("builtins.input", side_effect=["", "eyal", "y", "n"]), patch("prompts.getpass", return_value="good"):
         cli.run_setup()
     assert "will be used instead" in capsys.readouterr().err
+
+def test_build_client_returns_none_when_password_prompt_is_cancelled(setup_env):
+    config.save_config("https://example.com", "eyal")
+    with patch("cli.config.read_saved_password", return_value=None), \
+            patch("prompts.getpass", return_value=""):
+        assert cli.build_client() is None

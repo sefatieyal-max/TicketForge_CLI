@@ -76,6 +76,9 @@ def build_client():
     settings = config.load_config()
     username = settings["username"]
     password = config.read_saved_password(username) or ask_password(f"Password for {username}: ")
+    if password is None:
+        display.print_info("Cancelled. No password given.")
+        return None
     return TicketForgeClient(username, password, base_url=settings["base_url"])
 
 def describe_error(error):
