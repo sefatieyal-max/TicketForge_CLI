@@ -114,6 +114,8 @@ def setup_env(monkeypatch, tmp_path):
     monkeypatch.setattr(cli, "TicketForgeClient", SetupClient)
     monkeypatch.setattr(config, "store_password", lambda username, password: True)
     SetupClient.instances.clear()
+    monkeypatch.delenv(config.PASSWORD_ENV, raising=False)
+    monkeypatch.setattr(config, "delete_password", lambda username: True)
     return tmp_path
 
 
@@ -205,3 +207,17 @@ def test_create_cancelled_on_empty_title_sends_nothing():
     with patch("builtins.input", side_effect=[""]):
         cli.TicketForgeCLI(client).create_ticket()
     assert client.created == []
+
+def test_setup_declining_save_removes_old_password(setup_env, monkeypatch):
+    deleted = []
+    monkeypatch.setattr(config, "delete_password", lambda username: deleted.append(username) or True)
+    with patch("builtins.input", side_effect=["", "eyal", "y", "n"]), patch("prompts.getpass", return_value="good"):
+        cli.run_setup()
+    assert deleted == ["eyal"]
+
+
+def test_setup_warns_when_env_password_differs(setup_env, monkeypatch, capsys):
+    monkeypatch.setenv(config.PASSWORD_ENV, "something-else")
+    with patch("builtins.input", side_effect=["", "eyal", "y", "n"]), patch("prompts.getpass", return_value="good"):
+        cli.run_setup()
+    assert "will be used instead" in capsys.readouterr().err

@@ -52,7 +52,10 @@ def run_setup():
 
 
 def _offer_to_store_password(username, password):
+    """Save the new password, or remove an old saved one so it can't be loaded by mistake."""
+    _warn_if_env_password_differs(password)
     if not confirm("Save the password in your OS credential store?"):
+        config.delete_password(username)       # otherwise an old saved password wins next time
         print(f"OK. Set {config.PASSWORD_ENV} or you will be asked each time.")
         return
     if config.store_password(username, password):
@@ -60,6 +63,13 @@ def _offer_to_store_password(username, password):
     else:
         display.print_error(f"Could not save it (is 'keyring' installed?). Use {config.PASSWORD_ENV}.")
 
+
+def _warn_if_env_password_differs(password):
+    """The env var always wins, so warn if it holds a different password."""
+    env_password = config.read_env_password()
+    if env_password and env_password != password:
+        display.print_error(f"{config.PASSWORD_ENV} is set to a different password and will be used "
+                            f"instead. Update it or remove it.")
 
 def build_client():
     """Client from the saved config. Raises ConfigError if setup was never run."""

@@ -56,10 +56,13 @@ def save_config(base_url, username):
         json.dump({"base_url": base_url, "username": username}, file, indent=2)
     return path
 
+def read_env_password():
+    """The password from the environment variable, or None."""
+    return os.environ.get(PASSWORD_ENV) or None
 
 def read_saved_password(username):
     """Password from the env var or the OS credential store, or None."""
-    from_env = os.environ.get(PASSWORD_ENV)
+    from_env = read_env_password()
     if from_env:
         return from_env
     if keyring is None:
