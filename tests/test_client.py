@@ -18,6 +18,9 @@ API = f"{DEFAULT_BASE_URL}{API_PREFIX}"
 TICKET_URL = f"{API}/workitem/TF-1"
 LIST_URL = f"{API}/workitems/mine"
 
+def reset_in(seconds):
+    """An X-RateLimit-Reset value `seconds` from now, in the API's format (ISO with 'Z')."""
+    return (datetime.now(timezone.utc) + timedelta(seconds=seconds)).strftime("%Y-%m-%dT%H:%M:%S.000Z")
 
 @pytest.fixture
 def client():
@@ -152,8 +155,27 @@ def test_non_latin_password_raises_auth_error_not_traceback():
 
 @responses.activate
 def test_429_wait_comes_from_iso_reset_header_with_z(client):
-    reset = (datetime.now(timezone.utc) + timedelta(seconds=30)).strftime("%Y-%m-%dT%H:%M:%S.000Z")
+    reset = reset_in(30)
     responses.get(TICKET_URL, status=429, json={}, headers={"X-RateLimit-Reset": reset})
     with pytest.raises(RateLimitError) as error_info:
         client.get_ticket("TF-1")
     assert 28 <= error_info.value.wait_seconds <= 30
+
+@responses.activate
+def test_429_without_headers_uses_reset_from_earlier_response(client):
+    responses.get(TICKET_URL, json={"workitem": {}},
+                  headers={"X-RateLimit-Limit": "50", "X-RateLimit-Remaining": "1",
+                           "X-RateLimit-Reset": reset_in(30)})
+    responses.get(TICKET_URL, status=429, json={})
+    client.get_ticket("TF-1")
+    with pytest.raises(RateLimitError) as error_info:
+        client.get_ticket("TF-1")
+    assert 28 <= error_info.value.wait_seconds <= 30
+
+
+@responses.activate
+def test_429_with_reset_in_the_past_has_unknown_wait(client):
+    responses.get(TICKET_URL, status=429, json={}, headers={"X-RateLimit-Reset": "2020-01-01T00:00:00.000Z"})
+    with pytest.raises(RateLimitError) as error_info:
+        client.get_ticket("TF-1")
+    assert error_info.value.wait_seconds is None

@@ -49,6 +49,7 @@ class TicketForgeClient:
         self.session.headers.update({"Accept": "application/json"})
         self.rate_limit = None
         self.rate_remaining = None
+        self.rate_reset_at = None
 
     # ---------- account ----------
 
@@ -179,17 +180,19 @@ class TicketForgeClient:
             return
         self.rate_limit = self._to_int(headers.get(RATE_LIMIT_HEADER))
         self.rate_remaining = self._to_int(headers.get(RATE_REMAINING_HEADER))
+        self.rate_reset_at = parse_iso_datetime(headers.get(RATE_RESET_HEADER))
 
     def _wait_seconds(self, response):
-        """Seconds until we may retry, from Retry-After or the reset timestamp. None if unknown."""
+        """Seconds until we may retry: Retry-After, then the reset time in this response,
+        then the last reset time we saw. None if none of them is known or it already passed."""
         retry_after = self._to_int(response.headers.get(RETRY_AFTER_HEADER))
         if retry_after is not None:
             return retry_after
-        reset_at = parse_iso_datetime(response.headers.get(RATE_RESET_HEADER))
+        reset_at = parse_iso_datetime(response.headers.get(RATE_RESET_HEADER)) or self.rate_reset_at
         if reset_at is None:
             return None
         remaining = (reset_at - datetime.now(timezone.utc)).total_seconds()
-        return max(0, math.ceil(remaining))
+        return math.ceil(remaining) if remaining > 0 else None
 
     @staticmethod
     def _error_body(response):
