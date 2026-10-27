@@ -108,8 +108,7 @@ class TicketForgeCLI:
     def show_ticket(self, ref):
         """Print one ticket with all its details."""
         ticket = self._fetch_ticket(ref)
-        if ticket:
-            display.print_ticket_details(ticket, self._field_labels(ticket))
+        display.print_ticket_details(ticket, self._field_labels(ticket))
 
     def create_ticket(self, title=None, description=None, depends_on=None):
         """Create a ticket. If no title was given, ask for everything."""
@@ -135,8 +134,6 @@ class TicketForgeCLI:
         """Change a ticket. The API replaces the whole ticket (PUT), so: fetch it
         fresh, apply only the requested changes, preview, confirm, then send."""
         current = self._fetch_ticket(ref)
-        if current is None:
-            return
         before = self._editable_fields(current)
         after = {**before, **(changes or self._ask_changes(current))}
         if after == before:
@@ -189,21 +186,21 @@ class TicketForgeCLI:
             LOGOUT_CHOICE: ("Log out (forget saved password) and exit", self.logout),
         }
         if not self._login():
-            return
+            return False
         while True:
             status = display.format_status(self.client.username, self.client.rate_remaining, self.client.rate_limit)
             display.print_menu(MENU_TITLE, {key: label for key, (label, _) in menu.items()}, EXIT_CHOICE, status)
             choice = input("Choose: ").strip()
             if choice == EXIT_CHOICE:
                 print("Goodbye!")
-                return
+                return True
             if choice not in menu:
                 display.print_error(f"Please choose one of: {', '.join(menu)} or {EXIT_CHOICE}.")
                 continue
             self._run_safely(menu[choice][1])
 
             if choice == LOGOUT_CHOICE:
-                return
+                return True
 
     def _login(self):
         """Check the password before showing the menu (1 request, also reads the budget).
@@ -265,8 +262,7 @@ class TicketForgeCLI:
         try:
             return self.client.get_ticket(ref)
         except NotFoundError:
-            display.print_error(f"Ticket {ref} was not found.")
-            return None
+            raise NotFoundError(f"Ticket {ref} was not found.") from None
 
     def _field_labels(self, ticket):
         """Custom field labels, fetched only when the ticket has custom fields (saves a request)."""

@@ -87,7 +87,7 @@ def run_command(args):
         case "update":
             app.update_ticket(args.ref, update_changes(args))
         case None:
-            app.run_menu()
+            return EXIT_SUCCESS if app.run_menu() else EXIT_FAILURE
 
     return EXIT_SUCCESS
 

@@ -52,9 +52,9 @@ def test_update_without_changes_sends_nothing():
     assert client.updates == []
 
 
-def test_missing_ticket_shows_friendly_message(capsys):
-    cli.TicketForgeCLI(FakeClient(ticket=None)).show_ticket("TF-9")
-    assert "TF-9 was not found" in capsys.readouterr().err
+def test_missing_ticket_raises_friendly_not_found():
+    with pytest.raises(NotFoundError, match="TF-9 was not found"):
+        cli.TicketForgeCLI(FakeClient(ticket=None)).show_ticket("TF-9")
 
 class AlwaysWrongPasswordClient(FakeClient):
     def __init__(self):
