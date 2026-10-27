@@ -38,13 +38,12 @@ def test_incomplete_config_raises_config_error(config_dir):
         config.load_config()
 
 
-def test_env_password_wins_over_keyring(config_dir, monkeypatch):
-    monkeypatch.setenv(config.PASSWORD_ENV, " from-env ")
-    assert config.read_saved_password("eyal") == "from-env"
-
-
 def test_no_keyring_means_no_saved_password(config_dir, monkeypatch):
     monkeypatch.setattr(config, "keyring", None)
     assert config.read_saved_password("eyal") is None
     assert config.store_password("eyal", "x") is False
     assert config.delete_password("eyal") is False
+
+def test_env_password_is_used_exactly_as_given(config_dir, monkeypatch):
+    monkeypatch.setenv(config.PASSWORD_ENV, " from-env ")
+    assert config.read_saved_password("eyal") == " from-env "

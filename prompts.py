@@ -42,4 +42,4 @@ def confirm(question):
 
 def ask_password(prompt="Password: "):
     """Hidden input. Empty input returns None."""
-    return getpass(prompt).strip() or None
+    return getpass(prompt) or None

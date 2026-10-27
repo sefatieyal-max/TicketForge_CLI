@@ -59,7 +59,7 @@ def save_config(base_url, username):
 
 def read_saved_password(username):
     """Password from the env var or the OS credential store, or None."""
-    from_env = (os.environ.get(PASSWORD_ENV) or "").strip()
+    from_env = os.environ.get(PASSWORD_ENV)
     if from_env:
         return from_env
     if keyring is None:
