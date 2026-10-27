@@ -1,9 +1,9 @@
 import json
-
+import base64
 import pytest
 import requests
 import responses
-
+from datetime import datetime, timedelta, timezone
 from client import API_PREFIX, DEFAULT_BASE_URL, TicketForgeClient
 from exceptions import (
     AuthError,
@@ -31,11 +31,11 @@ def test_get_ticket_unwraps_workitem(client):
 
 
 @responses.activate
-def test_sends_basic_auth_header(client):
+def test_sends_exact_basic_auth_header(client):
     responses.get(TICKET_URL, json={"workitem": {}})
     client.get_ticket("TF-1")
-    assert responses.calls[0].request.headers["Authorization"].startswith("Basic ")
-
+    expected = "Basic " + base64.b64encode(b"eyal:secret").decode()
+    assert responses.calls[0].request.headers["Authorization"] == expected
 
 @responses.activate
 def test_not_found_code_with_400_raises_not_found(client):
@@ -148,3 +148,12 @@ def test_non_latin_password_raises_auth_error_not_traceback():
     responses.get(TICKET_URL, json={"workitem": {}})
     with pytest.raises(AuthError, match="Latin"):
         TicketForgeClient("eyal", "סיסמה").get_ticket("TF-1")
+
+
+@responses.activate
+def test_429_wait_comes_from_iso_reset_header_with_z(client):
+    reset = (datetime.now(timezone.utc) + timedelta(seconds=30)).strftime("%Y-%m-%dT%H:%M:%S.000Z")
+    responses.get(TICKET_URL, status=429, json={}, headers={"X-RateLimit-Reset": reset})
+    with pytest.raises(RateLimitError) as error_info:
+        client.get_ticket("TF-1")
+    assert 28 <= error_info.value.wait_seconds <= 30

@@ -20,6 +20,7 @@ from exceptions import (
     TicketForgeError,
     ValidationError,
 )
+from validators import parse_iso_datetime
 
 DEFAULT_BASE_URL = "https://integrations-assignment-ticketforge.vercel.app"
 API_PREFIX = "/api/tforge"
@@ -184,7 +185,7 @@ class TicketForgeClient:
         retry_after = self._to_int(response.headers.get(RETRY_AFTER_HEADER))
         if retry_after is not None:
             return retry_after
-        reset_at = self._parse_iso(response.headers.get(RATE_RESET_HEADER))
+        reset_at = parse_iso_datetime(response.headers.get(RATE_RESET_HEADER))
         if reset_at is None:
             return None
         remaining = (reset_at - datetime.now(timezone.utc)).total_seconds()
@@ -221,12 +222,5 @@ class TicketForgeClient:
     def _to_int(text):
         try:
             return int(text)
-        except (TypeError, ValueError):
-            return None
-
-    @staticmethod
-    def _parse_iso(text):
-        try:
-            return datetime.fromisoformat(text)
         except (TypeError, ValueError):
             return None

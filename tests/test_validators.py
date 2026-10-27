@@ -1,5 +1,5 @@
+from datetime import datetime, timezone
 import pytest
-
 import validators
 
 
@@ -60,3 +60,14 @@ def test_is_basic_auth_safe(text, expected):
 
 def test_parse_username_rejects_non_latin():
     assert validators.parse_username("אייל") is None
+
+
+
+def test_parse_iso_datetime_handles_z_suffix():
+    assert validators.parse_iso_datetime("2026-10-25T08:20:35.944Z") == \
+        datetime(2026, 10, 25, 8, 20, 35, 944000, tzinfo=timezone.utc)
+
+
+@pytest.mark.parametrize("text", [None, "", "not a date"])
+def test_parse_iso_datetime_returns_none_for_bad_input(text):
+    assert validators.parse_iso_datetime(text) is None

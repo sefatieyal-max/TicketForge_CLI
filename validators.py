@@ -1,11 +1,14 @@
-"""Pure input parsers.
+"""Pure parsers for user input and API values.
 
 Each function takes raw user text and returns the normalized value,
 or None when the input is certainly invalid. No printing, no network.
 """
 
 import re
+from datetime import datetime
 
+UTC_SUFFIX = "Z"
+UTC_OFFSET = "+00:00"
 BASIC_AUTH_ENCODING = "latin-1"   # requests encodes Basic auth credentials this way
 REF_PREFIX = "TF-"
 REF_PATTERN = re.compile(r"TF-\d+")
@@ -69,3 +72,15 @@ def parse_page_size(text):
         return None
     number = int(value)
     return number if MIN_PAGE_SIZE <= number <= MAX_PAGE_SIZE else None
+
+def parse_iso_datetime(text):
+    """'2026-10-25T08:20:35.944Z' -> timezone-aware datetime, or None.
+    Python 3.10 can't parse a trailing 'Z', so we turn it into '+00:00' first."""
+    if not isinstance(text, str):
+        return None
+    if text.endswith(UTC_SUFFIX):
+        text = text[: -len(UTC_SUFFIX)] + UTC_OFFSET
+    try:
+        return datetime.fromisoformat(text)
+    except ValueError:
+        return None

@@ -6,7 +6,7 @@ Nothing here makes decisions or talks to the API.
 
 import os
 import sys
-from datetime import datetime
+from validators import parse_iso_datetime
 
 try:
     import colorama
@@ -55,11 +55,10 @@ def format_datetime(iso_text):
     """'2026-10-25T08:20:35.944Z' -> '2026-10-25 10:20' in local time."""
     if not iso_text:
         return EMPTY_PLACEHOLDER
-    try:
-        return datetime.fromisoformat(iso_text).astimezone().strftime(DATE_DISPLAY_FORMAT)
-    except (TypeError, ValueError):
+    moment = parse_iso_datetime(iso_text)
+    if moment is None:
         return str(iso_text)
-
+    return moment.astimezone().strftime(DATE_DISPLAY_FORMAT)
 
 def format_stage(stage):
     """Pad first, then color, so ANSI codes don't break column alignment."""
