@@ -30,13 +30,16 @@ MENU_TITLE = "TicketForge"
 def run_setup():
     """Ask for connection details, verify them, save them. Returns True on success."""
     base_url = ask(f"TicketForge URL [{DEFAULT_BASE_URL}]: ") or DEFAULT_BASE_URL
-    username = ask_valid("Username: ", validators.parse_username, "Eyal (no ':' allowed)")
+    username = ask_valid("Username: ", validators.parse_username, "Eyal (Latin letters,no ':' allowed)")
     if username is None:
         print("Setup cancelled.")
         return None
     password = ask_password()
     if password is None:
         print("Setup cancelled.")
+        return None
+    if not validators.is_basic_auth_safe(password):
+        display.print_error("The password can only use Latin characters (TicketForge uses HTTP Basic auth).")
         return None
 
     client = TicketForgeClient(username, password, base_url=base_url)
@@ -80,6 +83,14 @@ def build_client():
         display.print_info("Cancelled. No password given.")
         return None
     return TicketForgeClient(username, password, base_url=settings["base_url"])
+
+def forget_password(username):
+    """Remove the saved password for this user."""
+    if config.delete_password(username):
+        display.print_success(f"Saved password for '{username}' removed.")
+    else:
+        print("No saved password to remove.")
+    print("Logged out. Next time you will be asked for the password (or run setup).")
 
 def describe_error(error):
     """One friendly line for any of our exceptions (used by main.py and the menu)."""
@@ -241,11 +252,7 @@ class TicketForgeCLI:
 
     def logout(self):
         """Forget the saved password for the current user."""
-        if config.delete_password(self.client.username):
-            display.print_success(f"Saved password for '{self.client.username}' removed.")
-        else:
-            print("No saved password to remove.")
-        print("Logged out. Next time you will be asked for the password (or run setup).")
+        forget_password(self.client.username)
 
 
     @staticmethod

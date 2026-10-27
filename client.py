@@ -136,6 +136,8 @@ class TicketForgeClient:
         url = f"{self.base_url}{API_PREFIX}{path}"
         try:
             response = self.session.request(method, url, timeout=self.timeout, **kwargs)
+        except UnicodeEncodeError:
+            raise AuthError("Username and password can only use Latin characters (HTTP Basic auth).") from None
         except requests.exceptions.Timeout:
             raise NetworkError("The request timed out.") from None
         except requests.exceptions.RequestException:

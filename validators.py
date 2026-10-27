@@ -6,6 +6,7 @@ or None when the input is certainly invalid. No printing, no network.
 
 import re
 
+BASIC_AUTH_ENCODING = "latin-1"   # requests encodes Basic auth credentials this way
 REF_PREFIX = "TF-"
 REF_PATTERN = re.compile(r"TF-\d+")
 STAGES = ("open", "in_progress", "review", "closed")
@@ -15,6 +16,13 @@ MAX_USERNAME_LENGTH = 50
 MIN_PAGE_SIZE = 1
 MAX_PAGE_SIZE = 50
 
+def is_basic_auth_safe(text):
+    """True if `text` can be sent in a Basic auth header (Latin-1 only, so no Hebrew)."""
+    try:
+        text.encode(BASIC_AUTH_ENCODING)
+    except UnicodeEncodeError:
+        return False
+    return True
 
 def parse_ref(text):
     """'tf-12', 'TF-12', '#12' or '12' -> 'TF-12'."""
@@ -48,7 +56,8 @@ def parse_title(text):
 def parse_username(text):
     """Trimmed username without ':' (it would break Basic auth)."""
     value = (text or "").strip()
-    if not value or BASIC_AUTH_SEPARATOR in value or len(value) > MAX_USERNAME_LENGTH:
+    if (not value or BASIC_AUTH_SEPARATOR in value or len(value) > MAX_USERNAME_LENGTH
+            or not is_basic_auth_safe(value)):
         return None
     return value
 

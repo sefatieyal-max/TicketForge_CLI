@@ -6,7 +6,7 @@ friendly messages and a non-zero exit code. No traceback reaches the user.
 
 import argparse
 import sys
-
+import config
 import cli
 import display
 from client import DEFAULT_PAGE_SIZE
@@ -58,6 +58,7 @@ def build_parser():
     update_cmd.add_argument("--description", help="new description")
     update_cmd.add_argument("--stage", type=STAGE_TYPE, help="open, in_progress, review or closed")
     update_cmd.add_argument("--depends-on", type=REFS_TYPE, help="comma-separated refs, e.g. TF-1,TF-2")
+    commands.add_parser("logout", help="Forget the saved password")
     return parser
 
 
@@ -75,6 +76,10 @@ def run_command(args):
     """Dispatch one command. Returns an exit code."""
     if args.command == "setup":
         return EXIT_SUCCESS if cli.run_setup() is not None else EXIT_FAILURE
+    if args.command == "logout":
+        cli.forget_password(config.load_config()["username"])
+        return EXIT_SUCCESS
+
     client = cli.build_client()
     if not client:
         return EXIT_FAILURE

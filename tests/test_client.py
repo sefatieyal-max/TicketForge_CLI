@@ -142,3 +142,9 @@ def test_unconfigured_client_fails_before_sending():
     """No credentials -> AuthError without any network call (responses is not active)."""
     with pytest.raises(AuthError):
         TicketForgeClient().get_ticket("TF-1")
+
+@responses.activate
+def test_non_latin_password_raises_auth_error_not_traceback():
+    responses.get(TICKET_URL, json={"workitem": {}})
+    with pytest.raises(AuthError, match="Latin"):
+        TicketForgeClient("eyal", "סיסמה").get_ticket("TF-1")

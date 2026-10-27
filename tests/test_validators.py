@@ -48,3 +48,15 @@ def test_parse_username_rejects_colon_because_it_breaks_basic_auth():
 ])
 def test_parse_page_size_boundaries(text, expected):
     assert validators.parse_page_size(text) == expected
+
+@pytest.mark.parametrize("text, expected", [
+    ("abc123", True),
+    ("café", True),
+    ("סיסמה", False),
+])
+def test_is_basic_auth_safe(text, expected):
+    assert validators.is_basic_auth_safe(text) is expected
+
+
+def test_parse_username_rejects_non_latin():
+    assert validators.parse_username("אייל") is None

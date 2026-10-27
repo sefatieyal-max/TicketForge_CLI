@@ -227,3 +227,8 @@ def test_build_client_returns_none_when_password_prompt_is_cancelled(setup_env):
     with patch("cli.config.read_saved_password", return_value=None), \
             patch("prompts.getpass", return_value=""):
         assert cli.build_client() is None
+
+def test_setup_rejects_non_latin_password_before_register(setup_env):
+    with patch("builtins.input", side_effect=["", "eyal"]), patch("prompts.getpass", return_value="סיסמה"):
+        assert cli.run_setup() is None
+    assert SetupClient.instances == []      # no client was created, so nothing was registered
